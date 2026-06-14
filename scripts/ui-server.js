@@ -168,7 +168,7 @@ function findSession(sessionId, source) {
   }
   const target = entries.find((entry) => entry.sessionId === sessionId);
   if (!target) {
-    throw new UiServerError(`未找到会话 ${sessionId}`, 404);
+    throw new UiServerError(`未找到会话: ${sessionId}`, 404);
   }
   return { codexHome, target };
 }
@@ -179,6 +179,18 @@ function requireSessionId(value) {
     throw new UiServerError("缺少 sessionId", 400);
   }
   return sessionId;
+}
+
+function normalizeSessionIds(body) {
+  const rawIds = Array.isArray(body.sessionIds) ? body.sessionIds : [body.sessionId];
+  const sessionIds = rawIds
+    .map((value) => (typeof value === "string" ? value.trim() : ""))
+    .filter(Boolean);
+  const uniqueIds = Array.from(new Set(sessionIds));
+  if (uniqueIds.length === 0) {
+    throw new UiServerError("缺少 sessionId", 400);
+  }
+  return uniqueIds;
 }
 
 function ensureRelativeProjectOutput(outputPath) {
@@ -251,46 +263,55 @@ function archiveSession(body) {
   const sessionId = requireSessionId(body.sessionId);
   const force = Boolean(body.force);
   const { codexHome, target } = findSession(sessionId, "sessions");
-  const result = history.archiveSessions({
+  return history.archiveSessions({
     codexHome,
     entries: [target],
     force,
   });
-  return result;
 }
 
 function recoverSession(body) {
   const sessionId = requireSessionId(body.sessionId);
   const force = Boolean(body.force);
   const { codexHome, target } = findSession(sessionId, "archived");
-  const result = history.recoverSessions({
+  return history.recoverSessions({
     codexHome,
     entries: [target],
     force,
   });
-  return result;
 }
 
 function deleteSession(body) {
-  const sessionId = requireSessionId(body.sessionId);
   if (!body.force) {
     throw new UiServerError("删除会话必须显式传入 force", 400);
   }
-  const { codexHome, target } = findSession(sessionId, "all");
+
+  const sessionIds = normalizeSessionIds(body);
+  const codexHome = history.getCodexHome();
+  const entries = history.loadSessionIndex(codexHome);
+  const entryMap = new Map(entries.map((entry) => [entry.sessionId, entry]));
+  const missingSessionIds = sessionIds.filter((sessionId) => !entryMap.has(sessionId));
+  if (missingSessionIds.length > 0) {
+    throw new UiServerError(`未找到会话: ${missingSessionIds.join(", ")}`, 404);
+  }
+
+  const sessionFiles = sessionIds.map((sessionId) => entryMap.get(sessionId).filePath);
   const result = history.deleteSessions({
     clearHistory: false,
     codexHome,
-    sessionFiles: [target.filePath],
-    sessionIds: [sessionId],
+    sessionFiles,
+    sessionIds,
   });
+
   return {
     all: false,
     deletedFiles: result.deletedFiles,
     failedFileCount: result.failedFileCount,
     failedFiles: result.failedFiles,
     removedHistoryLines: result.removedHistoryLines,
-    sessionFileCount: 1,
-    sessionIds: [sessionId],
+    sessionCount: sessionIds.length,
+    sessionFileCount: sessionFiles.length,
+    sessionIds,
   };
 }
 

@@ -1,35 +1,13 @@
 {
   "name": "codex-history-skill",
-  "version": "0.3.0",
-  "private": true,
+  "version": "0.4.0",
+  "description": "Local Codex conversation history manager with a visual dashboard.",
+  "private": false,
   "license": "MIT",
-  "description": "Codex Skill: 管理本机对话历史（list/preview/export/archive/recover/delete）",
-  "keywords": [
-    "codex",
-    "skill",
-    "history",
-    "session",
-    "archive"
-  ],
-  "files": [
-    "SKILL.md",
-    "README.md",
-    "README.en.md",
-    "CHANGELOG.md",
-    "LICENSE",
-    "scripts",
-    "public"
-  ],
-  "bin": {
-    "codex-history": "scripts/history-cli.js"
-  },
-  "engines": {
-    "node": ">=14.0.0"
-  },
+  "type": "commonjs",
   "scripts": {
-    "test": "node --test test/unit-skill-history-cli.test.js",
-    "cli": "node scripts/history-cli.js",
     "ui": "node scripts/history-cli.js ui",
-    "pack:skill": "node scripts/pack-skill.js"
+    "list": "node scripts/history-cli.js list --source all --format table",
+    "check": "node --check scripts/history-cli.js && node --check scripts/history-core.js && node --check scripts/ui-server.js && node --check public/app.js"
   }
 }
