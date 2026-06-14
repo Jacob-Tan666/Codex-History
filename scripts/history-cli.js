@@ -1,0 +1,758 @@
+#!/usr/bin/env node
+const fs = require("fs");
+const path = require("path");
+const history = require("./history-core");
+const {
+  formatArchiveHuman,
+  formatDeleteHuman,
+  formatExportHuman,
+  formatListHuman,
+  formatSessionMarkdown,
+  formatPreviewHuman,
+  formatRecoverHuman,
+  toJson,
+} = require("./formatters");
+const uiServer = require("./ui-server");
+
+const EXIT_CODES = {
+  OK: 0,
+  PARAM_ERROR: 2,
+  NOT_FOUND: 3,
+  PARTIAL_FAILURE: 4,
+  UNHANDLED: 5,
+};
+
+class CliError extends Error {
+  constructor(message, exitCode) {
+    super(message);
+    this.name = "CliError";
+    this.exitCode = exitCode;
+  }
+}
+
+const HELP_TITLE = "Codex History Skill CLI";
+const HELP_COMMANDS = [
+  {
+    name: "list",
+    usage: "history-cli list [--source all|sessions|archived] [--limit N] [--format table|detail] [--json]",
+  },
+  {
+    name: "preview",
+    usage: "history-cli preview --session-id <id> [--max-messages N] [--json]",
+  },
+  {
+    name: "delete",
+    usage: "history-cli delete (--session-id <id> [--session-id <id> ...] | --all) [--force] [--json]",
+  },
+  {
+    name: "archive",
+    usage: "history-cli archive --session-id <id> [--session-id <id> ...] [--force] [--json]",
+  },
+  {
+    name: "recover",
+    usage: "history-cli recover --session-id <id> [--session-id <id> ...] [--force] [--json]",
+  },
+  {
+    name: "export",
+    usage:
+      "history-cli export --session-id <id> --output <file> [--format md] [--max-messages N] [--json]",
+  },
+  {
+    name: "ui",
+    usage: "history-cli ui [--host 127.0.0.1] [--port 17876] [--open]",
+  },
+];
+
+function printHelp() {
+  const lines = [HELP_TITLE, "", "用法:"];
+  for (const command of HELP_COMMANDS) {
+    lines.push(`  ${command.usage}`);
+  }
+  console.log(lines.join("\n"));
+}
+
+function buildHelpPayload() {
+  return {
+    commands: HELP_COMMANDS.map((command) => ({
+      name: command.name,
+      usage: command.usage,
+    })),
+    title: HELP_TITLE,
+  };
+}
+
+function outputHelp(asJson) {
+  if (asJson) {
+    console.log(toJson(buildHelpPayload()));
+    return;
+  }
+  printHelp();
+}
+
+function requireValue(args, index, optionName) {
+  const value = args[index + 1];
+  if (!value || value.startsWith("--")) {
+    throw new CliError(`参数 ${optionName} 需要值`, EXIT_CODES.PARAM_ERROR);
+  }
+  return value;
+}
+
+function parsePositiveInt(value, optionName) {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    throw new CliError(`参数 ${optionName} 必须为正整数`, EXIT_CODES.PARAM_ERROR);
+  }
+  return parsed;
+}
+
+function parseListArgs(args) {
+  const options = {
+    source: "sessions",
+    limit: null,
+    format: "table",
+    json: false,
+  };
+
+  for (let index = 0; index < args.length; index += 1) {
+    const token = args[index];
+    if (token === "--json") {
+      options.json = true;
+      continue;
+    }
+    if (token === "--source") {
+      const value = requireValue(args, index, token);
+      if (!["all", "sessions", "archived"].includes(value)) {
+        throw new CliError("参数 --source 仅支持 all|sessions|archived", EXIT_CODES.PARAM_ERROR);
+      }
+      options.source = value;
+      index += 1;
+      continue;
+    }
+    if (token === "--format") {
+      const value = requireValue(args, index, token);
+      if (!["table", "detail"].includes(value)) {
+        throw new CliError("参数 --format 仅支持 table|detail", EXIT_CODES.PARAM_ERROR);
+      }
+      options.format = value;
+      index += 1;
+      continue;
+    }
+    if (token === "--limit") {
+      const value = requireValue(args, index, token);
+      options.limit = parsePositiveInt(value, token);
+      index += 1;
+      continue;
+    }
+    throw new CliError(`未知参数: ${token}`, EXIT_CODES.PARAM_ERROR);
+  }
+
+  return options;
+}
+
+function parsePreviewArgs(args) {
+  const options = {
+    sessionId: "",
+    maxMessages: null,
+    json: false,
+  };
+
+  for (let index = 0; index < args.length; index += 1) {
+    const token = args[index];
+    if (token === "--json") {
+      options.json = true;
+      continue;
+    }
+    if (token === "--session-id") {
+      const value = requireValue(args, index, token);
+      options.sessionId = value;
+      index += 1;
+      continue;
+    }
+    if (token === "--max-messages") {
+      const value = requireValue(args, index, token);
+      options.maxMessages = parsePositiveInt(value, token);
+      index += 1;
+      continue;
+    }
+    throw new CliError(`未知参数: ${token}`, EXIT_CODES.PARAM_ERROR);
+  }
+
+  if (!options.sessionId) {
+    throw new CliError("preview 命令缺少 --session-id", EXIT_CODES.PARAM_ERROR);
+  }
+
+  return options;
+}
+
+function parseDeleteArgs(args) {
+  const options = {
+    all: false,
+    sessionIds: [],
+    force: false,
+    json: false,
+  };
+
+  for (let index = 0; index < args.length; index += 1) {
+    const token = args[index];
+    if (token === "--json") {
+      options.json = true;
+      continue;
+    }
+    if (token === "--force") {
+      options.force = true;
+      continue;
+    }
+    if (token === "--all") {
+      options.all = true;
+      continue;
+    }
+    if (token === "--session-id") {
+      const value = requireValue(args, index, token);
+      options.sessionIds.push(value);
+      index += 1;
+      continue;
+    }
+    throw new CliError(`未知参数: ${token}`, EXIT_CODES.PARAM_ERROR);
+  }
+
+  if (options.all && options.sessionIds.length > 0) {
+    throw new CliError("delete 命令的 --all 不能与 --session-id 混用", EXIT_CODES.PARAM_ERROR);
+  }
+
+  if (!options.all && options.sessionIds.length === 0) {
+    throw new CliError("delete 命令需要 --session-id 或 --all", EXIT_CODES.PARAM_ERROR);
+  }
+
+  options.sessionIds = Array.from(new Set(options.sessionIds));
+  return options;
+}
+
+function parseArchiveArgs(args) {
+  const options = {
+    force: false,
+    json: false,
+    sessionIds: [],
+  };
+
+  for (let index = 0; index < args.length; index += 1) {
+    const token = args[index];
+    if (token === "--json") {
+      options.json = true;
+      continue;
+    }
+    if (token === "--force") {
+      options.force = true;
+      continue;
+    }
+    if (token === "--session-id") {
+      const value = requireValue(args, index, token);
+      options.sessionIds.push(value);
+      index += 1;
+      continue;
+    }
+    throw new CliError(`未知参数: ${token}`, EXIT_CODES.PARAM_ERROR);
+  }
+
+  if (options.sessionIds.length === 0) {
+    throw new CliError("archive 命令至少需要一个 --session-id", EXIT_CODES.PARAM_ERROR);
+  }
+
+  options.sessionIds = Array.from(new Set(options.sessionIds));
+  return options;
+}
+
+function parseRecoverArgs(args) {
+  const options = {
+    force: false,
+    json: false,
+    sessionIds: [],
+  };
+
+  for (let index = 0; index < args.length; index += 1) {
+    const token = args[index];
+    if (token === "--json") {
+      options.json = true;
+      continue;
+    }
+    if (token === "--force") {
+      options.force = true;
+      continue;
+    }
+    if (token === "--session-id") {
+      const value = requireValue(args, index, token);
+      options.sessionIds.push(value);
+      index += 1;
+      continue;
+    }
+    throw new CliError(`未知参数: ${token}`, EXIT_CODES.PARAM_ERROR);
+  }
+
+  if (options.sessionIds.length === 0) {
+    throw new CliError("recover 命令至少需要一个 --session-id", EXIT_CODES.PARAM_ERROR);
+  }
+
+  options.sessionIds = Array.from(new Set(options.sessionIds));
+  return options;
+}
+
+function findNearestExistingPath(targetPath) {
+  let currentPath = targetPath;
+  while (!fs.existsSync(currentPath)) {
+    const parentPath = path.dirname(currentPath);
+    if (parentPath === currentPath) {
+      break;
+    }
+    currentPath = parentPath;
+  }
+  return currentPath;
+}
+
+function ensurePathInsideProject(targetPath, displayPath) {
+  const projectRoot = process.cwd();
+  const projectRootRealPath = fs.realpathSync.native(projectRoot);
+  const nearestExistingPath = findNearestExistingPath(targetPath);
+  const nearestExistingRealPath = fs.realpathSync.native(nearestExistingPath);
+  const remainingPath = path.relative(nearestExistingPath, targetPath);
+  const realTargetPath = remainingPath
+    ? path.resolve(nearestExistingRealPath, remainingPath)
+    : nearestExistingRealPath;
+  const relativeRealTargetPath = path.relative(projectRootRealPath, realTargetPath);
+
+  if (
+    !relativeRealTargetPath ||
+    relativeRealTargetPath === "." ||
+    relativeRealTargetPath.startsWith("..") ||
+    path.isAbsolute(relativeRealTargetPath)
+  ) {
+    throw new CliError(
+      `export 命令的 --output 必须位于当前项目目录内，且不能通过链接跳出项目目录: ${displayPath}`,
+      EXIT_CODES.PARAM_ERROR
+    );
+  }
+
+  return targetPath;
+}
+
+function parseExportArgs(args) {
+  const options = {
+    format: "md",
+    json: false,
+    maxMessages: null,
+    outputDisplayPath: "",
+    outputPath: "",
+    sessionId: "",
+  };
+
+  for (let index = 0; index < args.length; index += 1) {
+    const token = args[index];
+    if (token === "--json") {
+      options.json = true;
+      continue;
+    }
+    if (token === "--session-id") {
+      const value = requireValue(args, index, token);
+      options.sessionId = value;
+      index += 1;
+      continue;
+    }
+    if (token === "--output") {
+      const value = requireValue(args, index, token);
+      options.outputDisplayPath = value;
+      options.outputPath = value;
+      index += 1;
+      continue;
+    }
+    if (token === "--format") {
+      const value = requireValue(args, index, token);
+      if (value !== "md") {
+        throw new CliError("参数 --format 目前仅支持 md", EXIT_CODES.PARAM_ERROR);
+      }
+      options.format = value;
+      index += 1;
+      continue;
+    }
+    if (token === "--max-messages") {
+      const value = requireValue(args, index, token);
+      options.maxMessages = parsePositiveInt(value, token);
+      index += 1;
+      continue;
+    }
+    throw new CliError(`未知参数: ${token}`, EXIT_CODES.PARAM_ERROR);
+  }
+
+  if (!options.sessionId) {
+    throw new CliError("export 命令缺少 --session-id", EXIT_CODES.PARAM_ERROR);
+  }
+  if (!options.outputPath) {
+    throw new CliError("export 命令缺少 --output", EXIT_CODES.PARAM_ERROR);
+  }
+  if (path.isAbsolute(options.outputPath)) {
+    throw new CliError("export 命令的 --output 仅支持项目内相对路径", EXIT_CODES.PARAM_ERROR);
+  }
+
+  const resolvedOutputPath = path.resolve(options.outputPath);
+  const projectRoot = process.cwd();
+  const relativeOutputPath = path.relative(projectRoot, resolvedOutputPath);
+  if (
+    relativeOutputPath === "" ||
+    relativeOutputPath === "." ||
+    relativeOutputPath.startsWith("..") ||
+    path.isAbsolute(relativeOutputPath)
+  ) {
+    throw new CliError("export 命令的 --output 必须位于当前项目目录内", EXIT_CODES.PARAM_ERROR);
+  }
+
+  options.outputPath = ensurePathInsideProject(resolvedOutputPath, options.outputDisplayPath);
+  return options;
+}
+
+function parseUiCommandArgs(args) {
+  try {
+    return uiServer.parseUiArgs(args);
+  } catch (error) {
+    throw new CliError(error.message, EXIT_CODES.PARAM_ERROR);
+  }
+}
+
+function outputPayload(payload, asJson, humanFormatter) {
+  if (asJson) {
+    console.log(toJson(payload));
+    return;
+  }
+  console.log(humanFormatter(payload));
+}
+
+function argvWantsJson(argv) {
+  return Array.isArray(argv) && argv.includes("--json");
+}
+
+function outputError(error, argv) {
+  const exitCode = error instanceof CliError ? error.exitCode : EXIT_CODES.UNHANDLED;
+  const message = error && error.message ? error.message : "未知异常";
+
+  if (argvWantsJson(argv)) {
+    console.log(
+      toJson({
+        error: {
+          exitCode,
+          message,
+          type: error instanceof CliError ? "cli_error" : "unhandled_error",
+        },
+      })
+    );
+    return exitCode;
+  }
+
+  console.error(message);
+  return exitCode;
+}
+
+function runList(options) {
+  const codexHome = history.getCodexHome();
+  let items = history.loadSessionIndex(codexHome);
+  if (options.source !== "all") {
+    items = items.filter((item) => item.source === options.source);
+  }
+  const total = items.length;
+  if (options.limit) {
+    items = items.slice(0, options.limit);
+  }
+
+  const payload = {
+    items: items.map((item) => ({
+      filePath: item.filePath,
+      sessionId: item.sessionId,
+      source: item.source,
+      timeText: item.timeText,
+      title: item.title,
+    })),
+    format: options.format,
+    total,
+  };
+  outputPayload(payload, options.json, formatListHuman);
+  return EXIT_CODES.OK;
+}
+
+function runPreview(options) {
+  const codexHome = history.getCodexHome();
+  const entries = history.loadSessionIndex(codexHome);
+  const target = entries.find((entry) => entry.sessionId === options.sessionId);
+  if (!target) {
+    throw new CliError(`未找到会话: ${options.sessionId}`, EXIT_CODES.NOT_FOUND);
+  }
+
+  let messages = history.readSessionMessages(target.filePath);
+  if (options.maxMessages) {
+    messages = messages.slice(0, options.maxMessages);
+  }
+
+  const payload = {
+    messages,
+    sessionId: target.sessionId,
+    title: target.title || target.sessionId,
+  };
+  outputPayload(payload, options.json, formatPreviewHuman);
+  return EXIT_CODES.OK;
+}
+
+function runExport(options) {
+  const codexHome = history.getCodexHome();
+  const entries = history.loadSessionIndex(codexHome);
+  const target = entries.find((entry) => entry.sessionId === options.sessionId);
+  if (!target) {
+    throw new CliError(`未找到会话: ${options.sessionId}`, EXIT_CODES.NOT_FOUND);
+  }
+
+  const exportData = history.readSessionExportData(target.filePath);
+  let messages = exportData.messages;
+  if (options.maxMessages) {
+    messages = messages.slice(0, options.maxMessages);
+  }
+
+  const payload = {
+    format: options.format,
+    messages,
+    outputPath: options.outputPath,
+    sessionId: target.sessionId,
+    source: target.source,
+    timeText: target.timeText,
+    title: target.title || target.sessionId,
+  };
+  const outputDisplayPath = options.outputDisplayPath || path.relative(process.cwd(), payload.outputPath) || payload.outputPath;
+
+  const markdown = formatSessionMarkdown(payload);
+  try {
+    fs.mkdirSync(path.dirname(payload.outputPath), { recursive: true });
+    if (fs.existsSync(payload.outputPath) && fs.statSync(payload.outputPath).isDirectory()) {
+      throw new CliError(`导出失败: 输出路径是目录 ${outputDisplayPath}`, EXIT_CODES.PARAM_ERROR);
+    }
+    fs.writeFileSync(payload.outputPath, markdown, "utf8");
+  } catch (error) {
+    if (error instanceof CliError) {
+      throw error;
+    }
+    throw new CliError(`导出失败: 无法写入文件 ${outputDisplayPath} (${error.message})`, EXIT_CODES.UNHANDLED);
+  }
+
+  outputPayload(
+    {
+      format: payload.format,
+      messageCount: messages.length,
+      outputPath: outputDisplayPath,
+      sessionId: payload.sessionId,
+    },
+    options.json,
+    formatExportHuman
+  );
+  return EXIT_CODES.OK;
+}
+
+function runDelete(options) {
+  if (!options.force) {
+    throw new CliError("delete 命令需要显式传入 --force", EXIT_CODES.PARAM_ERROR);
+  }
+
+  const codexHome = history.getCodexHome();
+  const entries = options.all
+    ? history.loadAllSessionFileEntries(codexHome)
+    : history.loadSessionIndex(codexHome);
+  let selectedSessionIds = options.sessionIds;
+  let sessionFiles = [];
+  let sessionFileCount = 0;
+
+  if (options.all) {
+    selectedSessionIds = Array.from(new Set(entries.map((entry) => entry.sessionId)));
+    sessionFiles = entries.map((entry) => entry.filePath);
+    sessionFileCount = sessionFiles.length;
+  } else {
+    const entryMap = new Map(entries.map((entry) => [entry.sessionId, entry]));
+    const missingSessionIds = selectedSessionIds.filter((sessionId) => !entryMap.has(sessionId));
+    if (missingSessionIds.length > 0) {
+      throw new CliError(`未找到会话: ${missingSessionIds.join(", ")}`, EXIT_CODES.NOT_FOUND);
+    }
+
+    sessionFiles = selectedSessionIds.map((sessionId) => entryMap.get(sessionId).filePath);
+    sessionFileCount = sessionFiles.length;
+  }
+
+  const result = history.deleteSessions({
+    clearHistory: options.all,
+    codexHome,
+    sessionFiles,
+    sessionIds: selectedSessionIds,
+  });
+
+  const payload = {
+    all: options.all,
+    deletedFiles: result.deletedFiles,
+    failedFileCount: result.failedFileCount,
+    failedFiles: result.failedFiles,
+    removedHistoryLines: result.removedHistoryLines,
+    sessionFileCount,
+    sessionCount: selectedSessionIds.length,
+    sessionIds: selectedSessionIds,
+  };
+  outputPayload(payload, options.json, formatDeleteHuman);
+
+  if (result.failedFileCount > 0) {
+    return EXIT_CODES.PARTIAL_FAILURE;
+  }
+  return EXIT_CODES.OK;
+}
+
+function runArchive(options) {
+  const codexHome = history.getCodexHome();
+  const entries = history
+    .loadSessionIndex(codexHome)
+    .filter((entry) => entry.source === "sessions");
+  const entryMap = new Map(entries.map((entry) => [entry.sessionId, entry]));
+  const missingSessionIds = options.sessionIds.filter((sessionId) => !entryMap.has(sessionId));
+  if (missingSessionIds.length > 0) {
+    throw new CliError(`未找到会话: ${missingSessionIds.join(", ")}`, EXIT_CODES.NOT_FOUND);
+  }
+
+  const selectedEntries = options.sessionIds.map((sessionId) => entryMap.get(sessionId));
+  const result = history.archiveSessions({
+    codexHome,
+    entries: selectedEntries,
+    force: options.force,
+  });
+
+  const payload = {
+    conflictSkippedCount: result.conflictSkippedCount,
+    conflictSkippedSessionIds: result.conflictSkippedSessionIds,
+    failedFileCount: result.failedFileCount,
+    failedFiles: result.failedFiles,
+    movedFiles: result.movedFiles,
+  };
+  outputPayload(payload, options.json, formatArchiveHuman);
+
+  if (result.failedFileCount > 0 || result.conflictSkippedCount > 0) {
+    return EXIT_CODES.PARTIAL_FAILURE;
+  }
+  return EXIT_CODES.OK;
+}
+
+function runRecover(options) {
+  const codexHome = history.getCodexHome();
+  const entries = history
+    .loadSessionIndex(codexHome)
+    .filter((entry) => entry.source === "archived");
+  const entryMap = new Map(entries.map((entry) => [entry.sessionId, entry]));
+  const missingSessionIds = options.sessionIds.filter((sessionId) => !entryMap.has(sessionId));
+  if (missingSessionIds.length > 0) {
+    throw new CliError(`未找到会话: ${missingSessionIds.join(", ")}`, EXIT_CODES.NOT_FOUND);
+  }
+
+  const selectedEntries = options.sessionIds.map((sessionId) => entryMap.get(sessionId));
+  const result = history.recoverSessions({
+    codexHome,
+    entries: selectedEntries,
+    force: options.force,
+  });
+
+  const payload = {
+    conflictSkippedCount: result.conflictSkippedCount,
+    conflictSkippedSessionIds: result.conflictSkippedSessionIds,
+    failedFileCount: result.failedFileCount,
+    failedFiles: result.failedFiles,
+    movedFiles: result.movedFiles,
+  };
+  outputPayload(payload, options.json, formatRecoverHuman);
+
+  if (result.failedFileCount > 0 || result.conflictSkippedCount > 0) {
+    return EXIT_CODES.PARTIAL_FAILURE;
+  }
+  return EXIT_CODES.OK;
+}
+
+function runUi(options) {
+  uiServer.runUi(options.args).catch((error) => {
+    console.error(error && error.message ? error.message : "UI 启动失败");
+    process.exit(EXIT_CODES.UNHANDLED);
+  });
+  return EXIT_CODES.OK;
+}
+
+function parseCommand(command, args) {
+  if (command === "list") {
+    return {
+      options: parseListArgs(args),
+      run: runList,
+    };
+  }
+  if (command === "preview") {
+    return {
+      options: parsePreviewArgs(args),
+      run: runPreview,
+    };
+  }
+  if (command === "delete") {
+    return {
+      options: parseDeleteArgs(args),
+      run: runDelete,
+    };
+  }
+  if (command === "archive") {
+    return {
+      options: parseArchiveArgs(args),
+      run: runArchive,
+    };
+  }
+  if (command === "recover") {
+    return {
+      options: parseRecoverArgs(args),
+      run: runRecover,
+    };
+  }
+  if (command === "export") {
+    return {
+      options: parseExportArgs(args),
+      run: runExport,
+    };
+  }
+  if (command === "ui") {
+    parseUiCommandArgs(args);
+    return {
+      options: { args },
+      run: runUi,
+    };
+  }
+  throw new CliError(`未知命令: ${command}`, EXIT_CODES.PARAM_ERROR);
+}
+
+function runCli(argv) {
+  try {
+    if (!Array.isArray(argv) || argv.length === 0 || argv[0] === "--help" || argv[0] === "-h") {
+      outputHelp(argvWantsJson(argv));
+      return EXIT_CODES.OK;
+    }
+
+    const [command, ...args] = argv;
+    const action = parseCommand(command, args);
+    return action.run(action.options);
+  } catch (error) {
+    return outputError(error, argv);
+  }
+}
+
+if (require.main === module) {
+  const argv = process.argv.slice(2);
+  const exitCode = runCli(argv);
+  if (argv[0] !== "ui" || exitCode !== EXIT_CODES.OK) {
+    process.exit(exitCode);
+  }
+}
+
+module.exports = {
+  CliError,
+  EXIT_CODES,
+  parseArchiveArgs,
+  parseDeleteArgs,
+  parseExportArgs,
+  parseListArgs,
+  parsePreviewArgs,
+  parseRecoverArgs,
+  parseUiCommandArgs,
+  runCli,
+};
