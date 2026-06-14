@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1] - 2026-06-14
+
+### Changed
+
+- Switched the dashboard from a dark console theme to a bright glass workspace.
+- Rewrote the Chinese README with a more product-oriented GitHub homepage style.
+
 ## [0.4.0] - 2026-06-14
 
 ### Added

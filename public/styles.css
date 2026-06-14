@@ -1,21 +1,24 @@
 :root {
-  --bg: #080b10;
-  --bg-soft: #10151d;
-  --panel: rgba(17, 23, 32, 0.82);
-  --panel-solid: #121923;
-  --panel-strong: #182231;
-  --text: #eef6f2;
-  --muted: #93a6a6;
-  --line: rgba(168, 214, 207, 0.18);
-  --line-strong: rgba(130, 255, 219, 0.42);
-  --accent: #42f5b0;
-  --accent-strong: #13d8dc;
-  --accent-soft: rgba(66, 245, 176, 0.14);
-  --amber: #ffd166;
-  --danger: #ff4d6d;
-  --danger-soft: rgba(255, 77, 109, 0.14);
-  --violet: #8b7cf6;
-  --shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
+  --bg: #f7fbff;
+  --bg-warm: #fff8ef;
+  --panel: rgba(255, 255, 255, 0.78);
+  --panel-solid: #ffffff;
+  --panel-strong: #edf7ff;
+  --text: #172033;
+  --muted: #66758d;
+  --line: rgba(49, 92, 145, 0.16);
+  --line-strong: rgba(0, 154, 255, 0.34);
+  --accent: #0077ff;
+  --accent-strong: #00b8d9;
+  --accent-soft: rgba(0, 119, 255, 0.1);
+  --mint: #14c78f;
+  --amber: #d78300;
+  --danger: #e7355f;
+  --danger-soft: rgba(231, 53, 95, 0.1);
+  --violet: #7657ff;
+  --sun: #ffbf47;
+  --shadow: 0 24px 70px rgba(41, 81, 128, 0.16);
+  --shadow-tight: 0 12px 32px rgba(30, 91, 150, 0.12);
   --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -29,9 +32,9 @@ body {
   margin: 0;
   color: var(--text);
   background:
-    linear-gradient(135deg, rgba(8, 11, 16, 0.92), rgba(11, 18, 24, 0.96)),
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.03) 0 1px, transparent 1px 72px),
-    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 72px),
+    linear-gradient(135deg, rgba(247, 251, 255, 0.94), rgba(255, 248, 239, 0.88)),
+    repeating-linear-gradient(90deg, rgba(0, 119, 255, 0.045) 0 1px, transparent 1px 78px),
+    repeating-linear-gradient(0deg, rgba(118, 87, 255, 0.04) 0 1px, transparent 1px 78px),
     var(--bg);
   overflow-x: hidden;
 }
@@ -57,37 +60,60 @@ svg {
   pointer-events: none;
 }
 
+.ambient-scene::before,
+.ambient-scene::after {
+  position: absolute;
+  width: 48vw;
+  height: 48vw;
+  border-radius: 999px;
+  content: "";
+  filter: blur(8px);
+  opacity: 0.5;
+}
+
+.ambient-scene::before {
+  right: -16vw;
+  top: -18vw;
+  background: radial-gradient(circle, rgba(0, 184, 217, 0.32), transparent 64%);
+}
+
+.ambient-scene::after {
+  left: -18vw;
+  bottom: -20vw;
+  background: radial-gradient(circle, rgba(255, 191, 71, 0.34), transparent 66%);
+}
+
 .scan-line {
   position: absolute;
-  inset: -30% 0 auto;
-  height: 42%;
-  background: linear-gradient(180deg, transparent, rgba(66, 245, 176, 0.12), transparent);
-  transform: skewY(-9deg);
-  animation: scan 10s linear infinite;
+  inset: -36% -12% auto;
+  height: 34%;
+  background: linear-gradient(180deg, transparent, rgba(0, 119, 255, 0.16), transparent);
+  transform: skewY(-10deg);
+  animation: scan 9s linear infinite;
 }
 
 .mesh {
   position: absolute;
   inset: 0;
-  opacity: 0.48;
-  mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+  opacity: 0.6;
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
 }
 
 .mesh-a {
   background:
-    linear-gradient(115deg, transparent 0 42%, rgba(19, 216, 220, 0.14) 42% 43%, transparent 43% 100%),
-    linear-gradient(155deg, transparent 0 54%, rgba(255, 209, 102, 0.11) 54% 55%, transparent 55% 100%);
+    linear-gradient(116deg, transparent 0 39%, rgba(0, 119, 255, 0.2) 39% 39.35%, transparent 39.35% 100%),
+    linear-gradient(156deg, transparent 0 58%, rgba(20, 199, 143, 0.18) 58% 58.4%, transparent 58.4% 100%);
 }
 
 .mesh-b {
   background:
-    linear-gradient(55deg, transparent 0 46%, rgba(139, 124, 246, 0.12) 46% 47%, transparent 47% 100%),
-    linear-gradient(15deg, transparent 0 62%, rgba(66, 245, 176, 0.1) 62% 63%, transparent 63% 100%);
+    linear-gradient(54deg, transparent 0 45%, rgba(118, 87, 255, 0.17) 45% 45.35%, transparent 45.35% 100%),
+    linear-gradient(16deg, transparent 0 66%, rgba(255, 191, 71, 0.2) 66% 66.35%, transparent 66.35% 100%);
 }
 
 .app-shell {
   display: grid;
-  grid-template-columns: 320px minmax(0, 1fr);
+  grid-template-columns: 324px minmax(0, 1fr);
   min-height: 100vh;
 }
 
@@ -97,9 +123,11 @@ svg {
   height: 100vh;
   padding: 28px 24px;
   overflow: auto;
-  background: rgba(10, 14, 20, 0.78);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(245, 251, 255, 0.74)),
+    rgba(255, 255, 255, 0.82);
   border-right: 1px solid var(--line);
-  box-shadow: inset -1px 0 rgba(66, 245, 176, 0.08);
+  box-shadow: inset -1px 0 rgba(0, 119, 255, 0.08), var(--shadow-tight);
   backdrop-filter: blur(22px);
 }
 
@@ -113,17 +141,17 @@ svg {
 .brand-mark {
   display: grid;
   place-items: center;
-  width: 48px;
-  height: 48px;
-  border: 1px solid rgba(66, 245, 176, 0.55);
+  width: 50px;
+  height: 50px;
+  border: 1px solid rgba(0, 119, 255, 0.28);
   border-radius: 8px;
   background:
-    linear-gradient(135deg, rgba(66, 245, 176, 0.2), rgba(19, 216, 220, 0.12)),
-    #0c1118;
-  color: var(--accent);
+    linear-gradient(135deg, rgba(0, 119, 255, 0.94), rgba(0, 184, 217, 0.9) 55%, rgba(255, 191, 71, 0.9)),
+    #ffffff;
+  color: #ffffff;
   font-weight: 900;
   letter-spacing: 0;
-  box-shadow: 0 0 28px rgba(66, 245, 176, 0.16);
+  box-shadow: 0 18px 36px rgba(0, 119, 255, 0.26);
 }
 
 .brand-block h1,
@@ -158,35 +186,41 @@ svg {
 .stat {
   min-width: 0;
   padding: 14px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(0, 119, 255, 0.16);
   border-radius: 8px;
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(236, 248, 255, 0.78)),
     var(--panel);
+  box-shadow: 0 12px 30px rgba(47, 96, 140, 0.08);
 }
 
 .stat-wide {
   grid-column: 1 / -1;
+  background:
+    linear-gradient(135deg, rgba(0, 119, 255, 0.1), rgba(20, 199, 143, 0.1)),
+    rgba(255, 255, 255, 0.82);
 }
 
 .stat span {
   display: block;
-  font-size: 28px;
+  font-size: 29px;
   font-weight: 900;
   line-height: 1;
+  color: var(--text);
 }
 
 .stat small {
   color: var(--muted);
+  font-weight: 700;
 }
 
 .field-label,
 .limit-row label {
   display: block;
   margin: 18px 0 8px;
-  color: #c8d9d6;
+  color: #2c435f;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 850;
 }
 
 .search-box {
@@ -210,16 +244,17 @@ svg {
 .search-box input,
 .limit-row input {
   width: 100%;
-  height: 42px;
+  height: 43px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.78);
   color: var(--text);
   outline: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
 }
 
 .search-box input::placeholder {
-  color: rgba(147, 166, 166, 0.74);
+  color: rgba(102, 117, 141, 0.72);
 }
 
 .search-box input {
@@ -232,8 +267,8 @@ svg {
 
 .search-box input:focus,
 .limit-row input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(66, 245, 176, 0.14);
+  border-color: rgba(0, 119, 255, 0.56);
+  box-shadow: 0 0 0 4px rgba(0, 119, 255, 0.12);
 }
 
 .segmented {
@@ -243,7 +278,7 @@ svg {
   padding: 4px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(226, 241, 255, 0.72);
 }
 
 .segmented button {
@@ -253,13 +288,13 @@ svg {
   background: transparent;
   color: var(--muted);
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 850;
 }
 
 .segmented button.is-active {
   background: linear-gradient(135deg, var(--accent), var(--accent-strong));
-  color: #051014;
-  box-shadow: 0 10px 28px rgba(19, 216, 220, 0.2);
+  color: #ffffff;
+  box-shadow: 0 12px 24px rgba(0, 119, 255, 0.22);
 }
 
 .limit-row {
@@ -282,22 +317,30 @@ svg {
   width: 100%;
   border: 0;
   background: linear-gradient(135deg, var(--accent), var(--accent-strong));
-  color: #051014;
-  box-shadow: 0 14px 34px rgba(19, 216, 220, 0.2);
+  color: #ffffff;
+  box-shadow: 0 15px 32px rgba(0, 119, 255, 0.22);
+}
+
+.primary-button:hover,
+.danger-button:hover,
+.ghost-button:hover,
+.icon-button:hover {
+  transform: translateY(-1px);
 }
 
 .ghost-button {
   padding: 0 14px;
   border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.82);
   color: var(--text);
+  box-shadow: 0 10px 24px rgba(47, 96, 140, 0.08);
 }
 
 .danger-button {
   padding: 0 14px;
-  border: 1px solid rgba(255, 77, 109, 0.52);
-  background: var(--danger-soft);
-  color: #ffd7df;
+  border: 1px solid rgba(231, 53, 95, 0.26);
+  background: linear-gradient(135deg, rgba(231, 53, 95, 0.1), rgba(255, 255, 255, 0.72));
+  color: #b91d43;
 }
 
 .primary-button svg,
@@ -334,6 +377,7 @@ svg {
 
 .list-pane {
   border-right: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.18);
 }
 
 .pane-header {
@@ -345,7 +389,7 @@ svg {
 }
 
 .pane-header h2 {
-  font-size: 24px;
+  font-size: 25px;
 }
 
 .select-all {
@@ -356,7 +400,7 @@ svg {
   height: 34px;
   color: var(--muted);
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 850;
 }
 
 .select-all input {
@@ -372,12 +416,12 @@ svg {
   justify-content: space-between;
   margin-bottom: 14px;
   padding: 12px;
-  border: 1px solid rgba(66, 245, 176, 0.36);
+  border: 1px solid rgba(0, 119, 255, 0.22);
   border-radius: 8px;
   background:
-    linear-gradient(135deg, rgba(66, 245, 176, 0.12), rgba(19, 216, 220, 0.07)),
-    rgba(8, 12, 18, 0.8);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
+    linear-gradient(135deg, rgba(0, 119, 255, 0.12), rgba(20, 199, 143, 0.1)),
+    rgba(255, 255, 255, 0.86);
+  box-shadow: var(--shadow-tight);
 }
 
 .bulk-action-bar[hidden] {
@@ -413,23 +457,24 @@ svg {
 
 .session-card {
   display: grid;
-  grid-template-columns: 36px minmax(0, 1fr);
+  grid-template-columns: 38px minmax(0, 1fr);
   min-width: 0;
   max-width: 100%;
   border: 1px solid var(--line);
   border-radius: 8px;
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.025)),
-    rgba(13, 18, 26, 0.86);
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(238, 248, 255, 0.82)),
+    rgba(255, 255, 255, 0.9);
   overflow: hidden;
+  box-shadow: 0 10px 30px rgba(43, 88, 132, 0.09);
   transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
 }
 
 .session-card:hover,
 .session-card.is-active {
   border-color: var(--line-strong);
-  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.24), 0 0 0 1px rgba(66, 245, 176, 0.08);
-  transform: translateY(-1px);
+  box-shadow: 0 18px 46px rgba(0, 119, 255, 0.14), 0 0 0 1px rgba(0, 184, 217, 0.12);
+  transform: translateY(-2px);
 }
 
 .row-check {
@@ -437,7 +482,7 @@ svg {
   place-items: center;
   min-height: 92px;
   border-right: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.035);
+  background: linear-gradient(180deg, rgba(0, 119, 255, 0.05), rgba(20, 199, 143, 0.05));
 }
 
 .row-check input {
@@ -450,18 +495,18 @@ svg {
   display: block;
   width: 18px;
   height: 18px;
-  border: 1px solid rgba(147, 166, 166, 0.62);
+  border: 1px solid rgba(102, 117, 141, 0.42);
   border-radius: 5px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.86);
   transition: background 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
 }
 
 .row-check input:checked + span {
-  border-color: var(--accent);
+  border-color: rgba(0, 119, 255, 0.7);
   background:
     linear-gradient(135deg, var(--accent), var(--accent-strong)),
     var(--accent);
-  box-shadow: 0 0 18px rgba(66, 245, 176, 0.22);
+  box-shadow: 0 0 18px rgba(0, 119, 255, 0.28);
 }
 
 .row-check input:checked + span::after {
@@ -469,8 +514,8 @@ svg {
   width: 8px;
   height: 4px;
   margin: 5px 0 0 4px;
-  border-bottom: 2px solid #051014;
-  border-left: 2px solid #051014;
+  border-bottom: 2px solid #ffffff;
+  border-left: 2px solid #ffffff;
   content: "";
   transform: rotate(-45deg);
 }
@@ -497,6 +542,7 @@ svg {
   min-width: 0;
   max-width: 100%;
   overflow: hidden;
+  color: #152238;
   font-weight: 900;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -506,18 +552,18 @@ svg {
   flex: 0 0 auto;
   min-width: 72px;
   padding: 4px 8px;
-  border: 1px solid rgba(66, 245, 176, 0.32);
+  border: 1px solid rgba(0, 119, 255, 0.22);
   border-radius: 999px;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: #005ec8;
   font-size: 12px;
   font-weight: 900;
   text-align: center;
 }
 
 .badge.archived {
-  border-color: rgba(255, 209, 102, 0.38);
-  background: rgba(255, 209, 102, 0.12);
+  border-color: rgba(215, 131, 0, 0.28);
+  background: rgba(255, 191, 71, 0.16);
   color: var(--amber);
 }
 
@@ -538,6 +584,9 @@ svg {
 
 .detail-pane {
   overflow: auto;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.36), transparent 46%),
+    rgba(255, 255, 255, 0.08);
 }
 
 .empty-state {
@@ -551,14 +600,14 @@ svg {
 .empty-icon {
   display: grid;
   place-items: center;
-  width: 58px;
-  height: 58px;
+  width: 60px;
+  height: 60px;
   margin-bottom: 14px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(0, 119, 255, 0.18);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(230, 247, 255, 0.84));
   color: var(--accent);
-  box-shadow: 0 0 30px rgba(66, 245, 176, 0.14);
+  box-shadow: 0 18px 42px rgba(0, 119, 255, 0.16);
 }
 
 .detail-view.is-hidden,
@@ -571,8 +620,13 @@ svg {
   gap: 18px;
   align-items: start;
   justify-content: space-between;
-  padding-bottom: 18px;
-  border-bottom: 1px solid var(--line);
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(234, 248, 255, 0.82)),
+    var(--panel);
+  box-shadow: var(--shadow-tight);
 }
 
 .detail-header h2 {
@@ -587,17 +641,17 @@ svg {
   align-items: center;
   height: 26px;
   padding: 0 10px;
-  border: 1px solid rgba(66, 245, 176, 0.32);
+  border: 1px solid rgba(0, 119, 255, 0.22);
   border-radius: 999px;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: #005ec8;
   font-size: 12px;
   font-weight: 900;
 }
 
 .source-pill.archived {
-  border-color: rgba(255, 209, 102, 0.38);
-  background: rgba(255, 209, 102, 0.12);
+  border-color: rgba(215, 131, 0, 0.28);
+  background: rgba(255, 191, 71, 0.16);
   color: var(--amber);
 }
 
@@ -614,17 +668,19 @@ svg {
   height: 40px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
-  color: #d8e7e4;
+  background: rgba(255, 255, 255, 0.86);
+  color: #31506e;
+  box-shadow: 0 10px 24px rgba(47, 96, 140, 0.08);
+  transition: transform 160ms ease, border-color 160ms ease, color 160ms ease;
 }
 
 .icon-button:hover {
-  border-color: var(--accent);
+  border-color: rgba(0, 119, 255, 0.42);
   color: var(--accent);
 }
 
 .icon-button.danger:hover {
-  border-color: var(--danger);
+  border-color: rgba(231, 53, 95, 0.4);
   color: var(--danger);
 }
 
@@ -639,11 +695,12 @@ svg {
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.055);
+  background: rgba(255, 255, 255, 0.78);
   color: var(--muted);
   font-family: var(--mono);
   font-size: 12px;
   overflow-wrap: anywhere;
+  box-shadow: 0 10px 28px rgba(47, 96, 140, 0.07);
 }
 
 .inline-empty {
@@ -659,9 +716,9 @@ svg {
   border: 1px solid var(--line);
   border-radius: 8px;
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.02)),
-    rgba(12, 18, 26, 0.82);
-  box-shadow: 0 14px 42px rgba(0, 0, 0, 0.22);
+    linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(239, 248, 255, 0.76)),
+    rgba(255, 255, 255, 0.9);
+  box-shadow: 0 16px 42px rgba(47, 96, 140, 0.1);
 }
 
 .message-head {
@@ -674,6 +731,7 @@ svg {
 }
 
 .role {
+  color: #152238;
   font-weight: 900;
 }
 
@@ -687,7 +745,7 @@ svg {
   margin: 0;
   padding: 14px;
   overflow: auto;
-  color: #e4efed;
+  color: #24344c;
   white-space: pre-wrap;
   word-break: break-word;
   font-family: var(--mono);
@@ -701,10 +759,10 @@ svg {
   bottom: 22px;
   max-width: min(420px, calc(100vw - 44px));
   padding: 12px 14px;
-  border: 1px solid rgba(66, 245, 176, 0.32);
+  border: 1px solid rgba(0, 119, 255, 0.22);
   border-radius: 8px;
-  background: #071015;
-  color: #fff;
+  background: #172033;
+  color: #ffffff;
   box-shadow: var(--shadow);
   opacity: 0;
   pointer-events: none;
@@ -719,10 +777,10 @@ svg {
 
 @keyframes scan {
   0% {
-    transform: translateY(-80%) skewY(-9deg);
+    transform: translateY(-85%) skewY(-10deg);
   }
   100% {
-    transform: translateY(260%) skewY(-9deg);
+    transform: translateY(285%) skewY(-10deg);
   }
 }
 
