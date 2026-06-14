@@ -6,6 +6,7 @@
 
 - Switched the dashboard from a dark console theme to a bright glass workspace.
 - Rewrote the Chinese README with a more product-oriented GitHub homepage style.
+- Expanded the Chinese README into a more complete project manual with usage, CLI reference, API notes, data boundaries, and troubleshooting.
 
 ## [0.4.0] - 2026-06-14
 
