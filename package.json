@@ -1,6 +1,6 @@
 {
   "name": "codex-history-skill",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "A bright local dashboard for managing Codex conversation history.",
   "private": false,
   "license": "MIT",
