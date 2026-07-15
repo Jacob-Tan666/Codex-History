@@ -1,4 +1,5 @@
 node_modules/
+codex-history-skill.zip
 exports/
 *.log
 .DS_Store

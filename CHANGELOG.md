@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- Restored the `test`, `cli`, and `pack:skill` npm scripts removed during the dashboard redesign.
+- Synchronized package-lock metadata with package version 0.4.1 and the supported Node.js range.
+- Updated CI and release workflows to current official Action majors and Node.js 24.
+
 ## [0.4.1] - 2026-06-14
 
 ### Changed

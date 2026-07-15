@@ -5,9 +5,34 @@
   "private": false,
   "license": "MIT",
   "type": "commonjs",
+  "keywords": [
+    "codex",
+    "skill",
+    "history",
+    "session",
+    "archive"
+  ],
+  "files": [
+    "SKILL.md",
+    "README.md",
+    "README.en.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "scripts",
+    "public"
+  ],
+  "bin": {
+    "codex-history": "scripts/history-cli.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
+    "test": "node --test test/unit-skill-history-cli.test.js",
+    "cli": "node scripts/history-cli.js",
     "ui": "node scripts/history-cli.js ui",
     "list": "node scripts/history-cli.js list --source all --format table",
-    "check": "node --check scripts/history-cli.js && node --check scripts/history-core.js && node --check scripts/ui-server.js && node --check public/app.js"
+    "check": "node --check scripts/history-cli.js && node --check scripts/history-core.js && node --check scripts/ui-server.js && node --check public/app.js",
+    "pack:skill": "node scripts/pack-skill.js"
   }
 }
