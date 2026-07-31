@@ -5,6 +5,7 @@ const os = require("os");
 const path = require("path");
 
 const cli = require("../scripts/history-cli");
+const uiLauncher = require("../scripts/start-ui");
 
 function ensureDir(dirPath) {
   fs.mkdirSync(dirPath, { recursive: true });
@@ -149,6 +150,48 @@ function createIdeContextFixture() {
   );
 
   return { sessionFile, sessionId, tempRoot };
+}
+
+function createThreadIndexFixture() {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "codex-history-skill-index-"));
+  const sessionsDir = path.join(tempRoot, "sessions", "2026", "02", "09");
+  ensureDir(sessionsDir);
+
+  const sessionId = "sess-thread-index";
+  const sessionFile = path.join(sessionsDir, "thread-index.jsonl");
+  fs.writeFileSync(
+    sessionFile,
+    [
+      JSON.stringify({
+        type: "session_meta",
+        payload: {
+          cwd: "C:\\Users\\tester\\Documents\\openwrt",
+          id: sessionId,
+          timestamp: "2026-02-09T00:00:00Z",
+        },
+      }),
+      JSON.stringify({
+        type: "response_item",
+        payload: {
+          type: "message",
+          role: "user",
+          content: [{ type: "input_text", text: "原始长请求" }],
+        },
+      }),
+    ].join("\n") + "\n",
+    "utf8"
+  );
+  fs.writeFileSync(
+    path.join(tempRoot, "session_index.jsonl"),
+    `${JSON.stringify({
+      id: sessionId,
+      thread_name: "优化蜂窝网络管理界面",
+      updated_at: "2026-02-10T01:02:03Z",
+    })}\n`,
+    "utf8"
+  );
+
+  return { sessionId, tempRoot };
 }
 
 function createOpenTaskWrapperFixture() {
@@ -985,6 +1028,33 @@ test("runCli list 在 IDE 上下文中提取真实请求作为标题", () => {
       assert.equal(payload.total, 1);
       assert.equal(payload.items[0].sessionId, fixture.sessionId);
       assert.equal(payload.items[0].title, "列出最近一条对话");
+    });
+  } finally {
+    if (originalCodexHome === undefined) {
+      delete process.env.CODEX_HOME;
+    } else {
+      process.env.CODEX_HOME = originalCodexHome;
+    }
+    fs.rmSync(fixture.tempRoot, { recursive: true, force: true });
+  }
+});
+
+test("runCli list 优先使用 Codex 话题名并返回项目分组信息", () => {
+  const fixture = createThreadIndexFixture();
+  const originalCodexHome = process.env.CODEX_HOME;
+  process.env.CODEX_HOME = fixture.tempRoot;
+
+  try {
+    withCapturedStdStreams(({ logs, errors }) => {
+      const code = cli.runCli(["list", "--json", "--limit", "5"]);
+      assert.equal(code, cli.EXIT_CODES.OK);
+      assert.equal(errors.length, 0);
+
+      const payload = JSON.parse(logs.join("\n"));
+      assert.equal(payload.items[0].title, "优化蜂窝网络管理界面");
+      assert.equal(payload.items[0].cwd, "C:\\Users\\tester\\Documents\\openwrt");
+      assert.equal(payload.items[0].projectName, "openwrt");
+      assert.equal(payload.items[0].timeText, new Date("2026-02-10T01:02:03Z").toLocaleString());
     });
   } finally {
     if (originalCodexHome === undefined) {
@@ -2168,4 +2238,24 @@ test("runCli 未知命令时 --json 输出结构化错误对象", () => {
     assert.equal(payload.error.type, "cli_error");
     assert.ok(payload.error.message.includes("未知命令"));
   });
+});
+
+test("portable UI launcher parses defaults and overrides", () => {
+  assert.deepEqual(uiLauncher.parseArgs([]), {
+    host: "127.0.0.1",
+    open: true,
+    port: 17876,
+    portAttempts: 50,
+  });
+  assert.deepEqual(uiLauncher.parseArgs(["--host", "localhost", "--port", "18000", "--no-open"]), {
+    host: "localhost",
+    open: false,
+    port: 18000,
+    portAttempts: 50,
+  });
+});
+
+test("portable UI launcher rejects invalid ports", () => {
+  assert.throws(() => uiLauncher.parseArgs(["--port", "0"]), /--port/);
+  assert.throws(() => uiLauncher.parseArgs(["--port", "70000"]), /--port/);
 });
