@@ -18,7 +18,13 @@ function copyScriptFiles() {
   const scriptDir = path.join(stagingSkillDir, "scripts");
   fs.mkdirSync(scriptDir, { recursive: true });
 
-  const scriptFiles = ["formatters.js", "history-cli.js", "history-core.js", "ui-server.js"];
+  const scriptFiles = [
+    "formatters.js",
+    "history-cli.js",
+    "history-core.js",
+    "start-ui.js",
+    "ui-server.js",
+  ];
   for (const fileName of scriptFiles) {
     const sourcePath = path.join(repoRoot, "scripts", fileName);
     const targetPath = path.join(scriptDir, fileName);
@@ -38,6 +44,8 @@ try {
   copyPath("README.en.md");
   copyPath("CHANGELOG.md");
   copyPath("LICENSE");
+  copyPath("start-ui.cmd");
+  copyPath("start-ui.sh");
   copyPath("public");
   copyScriptFiles();
 

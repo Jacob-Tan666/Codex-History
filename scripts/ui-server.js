@@ -148,7 +148,9 @@ function getSessionEntries(query) {
     codexHome,
     filteredTotal,
     items: items.map((item) => ({
+      cwd: item.cwd,
       filePath: item.filePath,
+      projectName: item.projectName,
       sessionId: item.sessionId,
       source: item.source,
       timeText: item.timeText,
@@ -221,8 +223,10 @@ function previewSession(query) {
   const { target } = findSession(sessionId, query.source);
   const messages = history.readSessionMessages(target.filePath);
   return {
+    cwd: target.cwd,
     filePath: target.filePath,
     messages,
+    projectName: target.projectName,
     sessionId: target.sessionId,
     source: target.source,
     timeText: target.timeText,
@@ -454,6 +458,7 @@ module.exports = {
   DEFAULT_HOST,
   DEFAULT_PORT,
   UiServerError,
+  openBrowser,
   parseUiArgs,
   runUi,
   startServer,
