@@ -1,6 +1,6 @@
 ---
 name: codex-history
-description: 在 Codex 对话中管理本机历史会话，支持本地可视化 UI、表格列表、preview、export、archive、recover、按 session-id 删除或批量删除，并同步清理 history.jsonl。
+description: 管理 OpenAI Codex CLI 与 Codex Desktop 的本机历史会话。用于查看或整理 Codex History，支持本地可视化 UI、表格列表、preview、export、archive、recover、按 session-id 删除或批量删除，并同步清理 history.jsonl。
 ---
 
 # Codex History Skill

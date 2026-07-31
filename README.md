@@ -1,6 +1,17 @@
-# Codex History
+# Codex History - Codex 会话历史管理器
 
-Codex History 是一个用于管理本机 Codex 会话历史的本地工具。它提供命令行接口和 Web 可视化界面，帮助用户查看、筛选、预览、导出、归档、恢复和删除 Codex 产生的本地会话记录。
+[![CI](https://github.com/Jacob-Tan666/Codex-History/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Jacob-Tan666/Codex-History/actions/workflows/ci.yml)
+[![Latest Release](https://img.shields.io/github/v/release/Jacob-Tan666/Codex-History?display_name=tag&sort=semver)](https://github.com/Jacob-Tan666/Codex-History/releases/latest)
+[![OpenAI Codex Skill](https://img.shields.io/badge/OpenAI%20Codex-Skill-202123?logo=openai&logoColor=white)](./SKILL.md)
+[![Node.js >=18](https://img.shields.io/badge/Node.js-%E2%89%A518-339933?logo=nodedotjs&logoColor=white)](./package.json)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-4C8BF5)](#安装与运行)
+[![License: MIT](https://img.shields.io/badge/license-MIT-F2C744)](./LICENSE)
+
+中文 | [English](./README.en.md)
+
+Codex History 是面向 **OpenAI Codex CLI** 与 **Codex Desktop** 的本地会话历史管理器（Codex Skill）。它同时提供命令行接口和 Web 可视化 Dashboard，帮助用户查看、搜索、预览、导出、归档、恢复和删除 Codex 产生的本地会话记录。
+
+如果你正在寻找 Codex history、Codex 会话记录、Codex session manager 或本地历史清理工具，本项目提供跨 Windows、macOS 和 Linux 的轻量解决方案。
 
 项目的设计目标是明确的：**只处理 Codex 本地历史数据，不接入远程服务，不上传会话内容，不修改业务项目文件**。所有读写操作都限制在 `CODEX_HOME` 下的会话数据目录，以及用户显式指定的项目内导出路径。
 

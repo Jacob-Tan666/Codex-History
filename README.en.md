@@ -1,6 +1,17 @@
-# Codex History Skill
+# Codex History - Local Codex Session Manager
+
+[![CI](https://github.com/Jacob-Tan666/Codex-History/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Jacob-Tan666/Codex-History/actions/workflows/ci.yml)
+[![Latest Release](https://img.shields.io/github/v/release/Jacob-Tan666/Codex-History?display_name=tag&sort=semver)](https://github.com/Jacob-Tan666/Codex-History/releases/latest)
+[![OpenAI Codex Skill](https://img.shields.io/badge/OpenAI%20Codex-Skill-202123?logo=openai&logoColor=white)](./SKILL.md)
+[![Node.js >=18](https://img.shields.io/badge/Node.js-%E2%89%A518-339933?logo=nodedotjs&logoColor=white)](./package.json)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-4C8BF5)](#3-installation)
+[![License: MIT](https://img.shields.io/badge/license-MIT-F2C744)](./LICENSE)
 
 [中文](./README.md) | English
+
+Codex History is a local-first **OpenAI Codex history manager** and Codex Skill for **Codex CLI** and **Codex Desktop**. It combines a CLI with a visual Web dashboard for searching, previewing, exporting, archiving, recovering, and deleting local Codex sessions on Windows, macOS, and Linux.
+
+It is designed for developers looking for a Codex history viewer, Codex session manager, conversation-history dashboard, or local Codex cleanup tool.
 
 ## 1. Overview
 
