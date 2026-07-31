@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.4.3] - 2026-07-31
+
+### Added
+
+- Added `start-ui.cmd` for one-click startup on Windows.
+- Added `start-ui.sh` and a shared Node.js launcher for macOS and Linux.
+- Added automatic browser opening, running-instance reuse, and fallback to the next available port.
+- Added portable Node.js discovery through the system path, `CODEX_HISTORY_NODE`, or the Codex bundled runtime.
+
+### Changed
+
+- Included the portable launchers in the packaged skill ZIP.
+- Expanded launcher tests and documented `--no-open`, `--host`, and `--port` options.
+
 ## [0.4.2] - 2026-07-15
 
 ### Fixed

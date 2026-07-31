@@ -32,6 +32,16 @@ description: 在 Codex 对话中管理本机历史会话，支持本地可视化
 node scripts/history-cli.js ui [--host 127.0.0.1] [--port 17876] [--open]
 ```
 
+优先使用便携启动器：
+
+```text
+Windows: 双击 start-ui.cmd
+macOS/Linux: sh start-ui.sh
+通用: node scripts/start-ui.js
+```
+
+启动器默认打开浏览器；若 UI 已在默认端口运行则直接复用，若端口被其他程序占用则自动选择后续空闲端口。脚本通过自身位置定位技能目录，不依赖用户名或固定安装目录。可用 `--no-open` 禁止自动打开浏览器，也可用 `--host`、`--port` 覆盖默认地址。
+
 ### list
 
 ```bash

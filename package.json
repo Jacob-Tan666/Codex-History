@@ -1,6 +1,6 @@
 {
   "name": "codex-history-skill",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "A bright local dashboard for managing Codex conversation history.",
   "private": false,
   "license": "MIT",
@@ -18,6 +18,8 @@
     "README.en.md",
     "CHANGELOG.md",
     "LICENSE",
+    "start-ui.cmd",
+    "start-ui.sh",
     "scripts",
     "public"
   ],
@@ -30,9 +32,10 @@
   "scripts": {
     "test": "node --test test/unit-skill-history-cli.test.js",
     "cli": "node scripts/history-cli.js",
-    "ui": "node scripts/history-cli.js ui",
+    "ui": "node scripts/start-ui.js",
+    "ui:raw": "node scripts/history-cli.js ui",
     "list": "node scripts/history-cli.js list --source all --format table",
-    "check": "node --check scripts/history-cli.js && node --check scripts/history-core.js && node --check scripts/ui-server.js && node --check public/app.js",
+    "check": "node --check scripts/history-cli.js && node --check scripts/history-core.js && node --check scripts/ui-server.js && node --check scripts/start-ui.js && node --check public/app.js",
     "pack:skill": "node scripts/pack-skill.js"
   }
 }

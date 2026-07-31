@@ -74,20 +74,33 @@ CLI 支持以下命令：
 
 ### 环境要求
 
-- Node.js 14 或更高版本
-- 推荐 Node.js 18 或更高版本
+- Node.js 18 或更高版本
 
 本项目没有外部 npm 依赖，直接使用 Node.js 运行即可。
 
 ### 启动 Web UI
 
-在项目目录中运行：
+Windows 可直接双击技能目录中的 `start-ui.cmd`。macOS / Linux 可运行：
 
 ```bash
-node scripts/history-cli.js ui --open
+sh start-ui.sh
 ```
 
+通用启动命令为：
+
+```bash
+node scripts/start-ui.js
+```
+
+便携启动器会自动打开浏览器，复用已经运行的 Codex History UI，并在默认端口被其他程序占用时自动选择后续空闲端口。启动脚本通过自身位置定位文件，不依赖用户名或固定安装目录。
+
 如果不希望自动打开浏览器：
+
+```bash
+node scripts/start-ui.js --no-open
+```
+
+也可以直接使用底层 CLI：
 
 ```bash
 node scripts/history-cli.js ui

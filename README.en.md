@@ -55,8 +55,11 @@ unzip codex-history-skill.zip -d ~/.codex/skills
 ## 3.1 CLI Quick Reference
 
 ```bash
-# Start the local visual dashboard
-node scripts/history-cli.js ui --open
+# Start the local visual dashboard (opens the browser by default)
+node scripts/start-ui.js
+
+# Start without opening the browser
+node scripts/start-ui.js --no-open
 
 # List recent active sessions (top 10)
 node scripts/history-cli.js list --limit 10
@@ -104,6 +107,10 @@ node scripts/history-cli.js delete --all --force
 ## 3.2 Visual Dashboard
 
 After startup, open `http://127.0.0.1:17876/`:
+
+- On Windows, double-click `start-ui.cmd`.
+- On macOS/Linux, run `sh start-ui.sh`.
+- The portable launcher reuses an existing dashboard and automatically selects another local port when the default port is occupied.
 
 - Filter by `sessions`, `archived`, or `all`, and search by title, `sessionId`, or file path.
 - Preview messages, export Markdown, archive, recover, or delete from the detail pane.
